@@ -10,44 +10,7 @@ namespace Z80
 {
     public class Machine
     {
-        State State = new State();
-        Memory Memory = new Memory();
-        Instruction[] noPrefix = new Instruction[255];
-        Instruction[] cbPrefix = new Instruction[255];
-
-        public Machine()
-        {
-            InitInstructions();
-        }
-
-        private void InitInstructions()
-        {
-            noPrefix[0x01] = new Instruction("LD BC nn", () => { State.BC = ReadU16(); });
-            noPrefix[0x11] = new Instruction("LD DE nn", () => { State.DE = ReadU16(); });
-            noPrefix[0x21] = new Instruction("LD HL nn", () => { State.HL = ReadU16(); });
-            noPrefix[0x31] = new Instruction("LD SP nn", () => { State.SP = ReadU16(); });
-            noPrefix[0xAF] = new Instruction("XOR A", () => { XOR(State.A); });
-        }
-
-        private void XOR(byte s)
-        {
-            State.A ^= s;
-            State._Z = State.A == 0;
-        }
-
-        private byte ReadU8()
-        {
-            byte s = Memory.ReadU8(State.PC);
-            State.PC += 1;
-            return s;
-        }
-
-        private ushort ReadU16()
-        {
-            ushort s = Memory.ReadU16(State.PC);
-            State.PC += 2;
-            return s;
-        }
+        Cpu Cpu = new Cpu();
 
         public void Run()
         {
@@ -60,19 +23,19 @@ namespace Z80
         private void Cycle()
         {
             Instruction instruction = FetchAndDecode();
-            instruction.Action();
+            instruction.Execute();
         }
 
         public Instruction FetchAndDecode()
         {
-            byte opcode = ReadU8();
+            byte opcode = Cpu.ReadU8();
 
             DebugOpcode debugOpcode = new DebugOpcode(opcode);
 
             switch (opcode)
             {
-                case 0xCB: return cbPrefix[ReadU8()];
-                default: return noPrefix[opcode];
+                case 0xCB: return Cpu.CB[Cpu.ReadU8()];
+                default: return Cpu.Default[opcode];
             }
         }
 
@@ -91,7 +54,7 @@ namespace Z80
             /// situated at position $FE and is two bytes big, which means that right
             /// after that instruction has finished, the CPU executes the instruction
             /// at $100, which is the entry point code on a cartridge.
-            Memory.Write(bootstrap, 0);
+            Cpu.Mem.Write(bootstrap, 0);
 
             // http://gbdev.gg8.se/wiki/articles/Gameboy_Bootstrap_ROM
         }

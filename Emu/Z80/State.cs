@@ -3,7 +3,7 @@
 namespace Z80
 {
     [StructLayout(LayoutKind.Explicit)]
-    public class State
+    public class Reg
     {
         // The GameBoy has instructions & registers similiar to the 8080, 8085, & Z80 microprocessors.
         // The internal 8-bit registers are A, B, C, D, E, F, H, & L.

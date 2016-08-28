@@ -11,10 +11,10 @@ namespace Z80
         public Instruction(string description, Action action)
         {
             Description = description;
-            Action = action;
+            Execute = action;
         }
 
         public String Description;
-        public Action Action;
+        public Action Execute;
     }
 }

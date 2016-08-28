@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Z80
 {
-    public class Memory
+    public class Mem
     {
         /// The following is the distribution of the 64KB address space provided by the Game Boy’s memory system:
         ///    0x0000-0x3FFF: Permanently-mapped ROM bank.
