@@ -47,15 +47,15 @@ namespace Z80
         public ushort PC;
 
         // Zero Flag (Z): This bit is set when the result of a math operation is zero or two values match when using the CP instruction.
-        public bool _Z { get { return (F & 7) != 0; } set { F |= 7; } }
+        public bool _Z { get { return (F & 128) != 0; } set { F |= 128; } }
 
         // Subtract Flag (N): This bit is set if a subtraction was performed in the last math instruction. 
-        public bool _N { get { return (F & 6) != 0; } set { F |= 6; } }
+        public bool _N { get { return (F & 64) != 0; } set { F |= 64; } }
 
         // Half Carry Flag (H): This bit is set if a carry occurred from the lower nibble in the last math operation. 
-        public bool _H { get { return (F & 5) != 0; } set { F |= 5; } }
+        public bool _H { get { return (F & 32) != 0; } set { F |= 32; } }
 
         // Carry Flag (C): This bit is set if a carry occurred from the last math operation or if register A is the smaller value when executing the CP instruction.
-        public bool _C { get { return (F & 4) != 0; } set { F |= 4; } }
+        public bool _C { get { return (F & 16) != 0; } set { F |= 16; } }
     }
 }
