@@ -51,7 +51,7 @@
             /// situated at position $FE and is two bytes big, which means that right
             /// after that instruction has finished, the CPU executes the instruction
             /// at $100, which is the entry point code on a cartridge.
-            Cpu.Mem.Write(bootstrap, 0);
+            Cpu.Mem.WriteBytes(bootstrap, 0);
 
             // http://gbdev.gg8.se/wiki/articles/Gameboy_Bootstrap_ROM
         }

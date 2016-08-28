@@ -9,64 +9,54 @@ namespace Z80
 {
     public class Mem
     {
-        /// The following is the distribution of the 64KB address space provided by the Game Boy’s memory system:
-        ///    0x0000-0x3FFF: Permanently-mapped ROM bank.
-        ///    0x4000-0x7FFF: Area for switchable ROM banks.
-        ///    0x8000-0x9FFF: Video RAM.
-        ///    0xA000-0xBFFF: Area for switchable external RAM banks.
-        ///    0xC000-0xCFFF: Game Boy’s working RAM bank 0 .
-        ///    0xD000-0xDFFF: Game Boy’s working RAM bank 1.
-        ///    0xFE00-0xFEFF: Sprite Attribute Table.
-        ///    0xFF00-0xFF7F: Devices’ Mappings. Used to access I/O devices.
-        ///    0xFF80-0xFFFE: High RAM Area.
-        ///    0xFFFF: Interrupt Enable Register.
+        byte[] array;
+        MemoryStream stream;
 
-        MemoryStream data = new MemoryStream(64 * 1024);
-        byte[] buf = new byte[1024];
-
-        #region Private
-        private void ReadBytes(int numBytes)
+        public Mem()
         {
-            data.Read(buf, 0, numBytes);
+            // The following is the distribution of the 64KB address space provided by the Game Boy’s memory system:
+            //    0x0000-0x3FFF: Permanently-mapped ROM bank.
+            //    0x4000-0x7FFF: Area for switchable ROM banks.
+            //    0x8000-0x9FFF: Video RAM.
+            //    0xA000-0xBFFF: Area for switchable external RAM banks.
+            //    0xC000-0xCFFF: Game Boy’s working RAM bank 0 .
+            //    0xD000-0xDFFF: Game Boy’s working RAM bank 1.
+            //    0xFE00-0xFEFF: Sprite Attribute Table.
+            //    0xFF00-0xFF7F: Devices’ Mappings. Used to access I/O devices.
+            //    0xFF80-0xFFFE: High RAM Area.
+            //    0xFFFF: Interrupt Enable Register.
+            array = new byte[64 * 1024];
+            stream = new MemoryStream(array);
         }
 
-        private void WriteBytes(byte[] bytes, int offset)
+        #region Write
+        internal void WriteU8(byte val, long offset)
         {
-            data.Seek(offset, SeekOrigin.Begin);
-            data.Write(bytes, offset, bytes.Length);
+            array[offset] = val;
+        }
+
+        internal void WriteU16(ushort val, long offset)
+        {
+            WriteBytes(BitConverter.GetBytes(val), offset);
+        }
+
+        internal void WriteBytes(byte[] data, long offset)
+        {
+            stream.Position = offset;
+            stream.Write(data, 0, data.Length);
         }
         #endregion
 
-        public void Write(ushort addr, ushort val)
-        {
-            data.Seek(addr, SeekOrigin.Begin);
-            data.Write(BitConverter.GetBytes(val), 0, 2);
-        }
-
-        internal void WriteU8(int offset, byte val)
-        {
-            data.Seek(offset, SeekOrigin.Begin);
-            data.WriteByte(val);
-        }
-
-        public void Write(byte[] buffer, int offset)
-        {
-            data.Position = offset;
-            data.Write(buffer, 0, buffer.Length);
-        }
-
+        #region Read
         internal byte ReadU8(int offset)
         {
-            data.Seek(offset, SeekOrigin.Begin);
-            ReadBytes(1);
-            return buf[0];
+            return array[offset];
         }
 
         internal ushort ReadU16(int offset)
         {
-            data.Seek(offset, SeekOrigin.Begin);
-            ReadBytes(2);
-            return BitConverter.ToUInt16(buf, 0);
+            return BitConverter.ToUInt16(array, offset);
         }
+        #endregion
     }
 }

@@ -24,10 +24,10 @@ namespace Z80
             Default[0x21] = new Instruction("LD HL nn", () => { Reg.HL = ReadU16(); });
             Default[0x31] = new Instruction("LD SP nn", () => { Reg.SP = ReadU16(); });
 
-            Default[0x02] = new Instruction("LD (BC), A", () => { Mem.Write(addr: Reg.BC, val: Reg.A); Reg.HL--; });
-            Default[0x12] = new Instruction("LD (DE), A", () => { Mem.Write(addr: Reg.DE, val: Reg.A); Reg.HL--; });
-            Default[0x22] = new Instruction("LD (HL+), A", () => { Mem.Write(addr: Reg.HL, val: Reg.A); Reg.HL++; });
-            Default[0x32] = new Instruction("LD (HL-), A", () => { Mem.Write(addr: Reg.HL, val: Reg.A); Reg.HL--; });
+            Default[0x02] = new Instruction("LD (BC), A", () => { Mem.WriteU16(val: Reg.A, offset: Reg.BC); Reg.HL--; });
+            Default[0x12] = new Instruction("LD (DE), A", () => { Mem.WriteU16(val: Reg.A, offset: Reg.DE); Reg.HL--; });
+            Default[0x22] = new Instruction("LD (HL+), A", () => { Mem.WriteU16(val: Reg.A, offset: Reg.HL); Reg.HL++; });
+            Default[0x32] = new Instruction("LD (HL-), A", () => { Mem.WriteU16(val: Reg.A, offset: Reg.HL); Reg.HL--; });
 
             Default[0xAF] = new Instruction("XOR A", () => { XOR(Reg.A); });
 
@@ -144,7 +144,7 @@ namespace Z80
             else if (index == 3) Reg.E = val;
             else if (index == 4) Reg.H = val;
             else if (index == 5) Reg.L = val;
-            else if (index == 6) Mem.WriteU8(Reg.HL, val);
+            else if (index == 6) Mem.WriteU8(val, Reg.HL);
             else if (index == 7) Reg.A = val;
             else throw new Exception();
         }
