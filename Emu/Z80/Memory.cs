@@ -24,9 +24,29 @@ namespace Z80
         MemoryStream data = new MemoryStream(64 * 1024);
         byte[] buf = new byte[1024];
 
+        #region Private
         private void ReadBytes(int numBytes)
         {
             data.Read(buf, 0, numBytes);
+        }
+
+        private void WriteBytes(byte[] bytes, int offset)
+        {
+            data.Seek(offset, SeekOrigin.Begin);
+            data.Write(bytes, offset, bytes.Length);
+        }
+        #endregion
+
+        public void Write(ushort addr, ushort val)
+        {
+            data.Seek(addr, SeekOrigin.Begin);
+            data.Write(BitConverter.GetBytes(val), 0, 2);
+        }
+
+        internal void WriteU8(int offset, byte val)
+        {
+            data.Seek(offset, SeekOrigin.Begin);
+            data.WriteByte(val);
         }
 
         public void Write(byte[] buffer, int offset)

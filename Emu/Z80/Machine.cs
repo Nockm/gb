@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Z80
+﻿namespace Z80
 {
     public class Machine
     {
@@ -34,7 +26,12 @@ namespace Z80
 
             switch (opcode)
             {
-                case 0xCB: return Cpu.CB[Cpu.ReadU8()];
+                case 0xCB:
+                    {
+                        opcode = Cpu.ReadU8();
+                        debugOpcode = new DebugOpcode(opcode);
+                        return Cpu.CB[opcode];
+                    }
                 default: return Cpu.Default[opcode];
             }
         }
