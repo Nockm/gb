@@ -4,6 +4,13 @@
     {
         Cpu Cpu = new Cpu();
 
+        private Host host;
+
+        public Machine(Host host)
+        {
+            this.host = host;
+        }
+
         public void Run()
         {
             while (true)
@@ -38,6 +45,8 @@
 
         public void Startup()
         {
+            host.Startup();
+
             /// The boot ROM is a bootstrap program which is a 256 bytes big piece of
             /// code which checks the cartridge header is correct, scrolls the
             /// Nintendo bootup graphics and plays the "po-ling" sound.
