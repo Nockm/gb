@@ -2,7 +2,8 @@
 {
     public interface Host
     {
-        void updateScreen(object bitmap);
-        object getInput();
+        void Startup();
+        void UpdateScreen(object bitmap);
+        object GetInput();
     }
 }

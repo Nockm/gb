@@ -26,14 +26,19 @@ namespace Emu
             InitializeComponent();
         }
 
-        public object getInput()
+        public object GetInput()
         {
             throw new NotImplementedException();
         }
 
-        public void updateScreen(object bitmap)
+        public void UpdateScreen(object bitmap)
         {
             throw new NotImplementedException();
+        }
+
+        public void Startup()
+        {
+            // Show welcome message on screen
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)

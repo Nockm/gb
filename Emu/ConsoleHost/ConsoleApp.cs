@@ -15,21 +15,25 @@ namespace ConsoleHost
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Emu starting");
             ConsoleApp console = new ConsoleApp();
             Machine machine = new Machine(console);
             machine.Startup();
             machine.Run();
         }
 
-        public object getInput()
+        public object GetInput()
         {
             return new object();
         }
 
-        public void updateScreen(object bitmap)
+        public void UpdateScreen(object bitmap)
         {
             
+        }
+
+        public void Startup()
+        {
+            Console.WriteLine("Emu starting");
         }
     }
 }
