@@ -19,16 +19,26 @@ namespace Emu
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, Host
     {
         public MainWindow()
         {
             InitializeComponent();
         }
 
+        public object getInput()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void updateScreen(object bitmap)
+        {
+            throw new NotImplementedException();
+        }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            Machine machine = new Machine();
+            Machine machine = new Machine(this);
             machine.Startup();
             machine.Run();
         }

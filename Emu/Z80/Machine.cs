@@ -4,6 +4,13 @@
     {
         Cpu Cpu = new Cpu();
 
+        private Host host;
+
+        public Machine(Host host)
+        {
+            this.host = host;
+        }
+
         public void Run()
         {
             while (true)
