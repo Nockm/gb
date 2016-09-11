@@ -19,10 +19,10 @@ namespace Z80
         public byte H { get; set; }
 
         // These registers may be used in pairs for 16-bit operations as AF, BC, DE & HL.
-        public ushort AF { get { return (ushort)((A << 8) & F); } set { A = (byte)(value >> 8); F = (byte)value; } }
-        public ushort BC { get { return (ushort)((B << 8) & C); } set { B = (byte)(value >> 8); C = (byte)value; } }
-        public ushort DE { get { return (ushort)((D << 8) & E); } set { D = (byte)(value >> 8); E = (byte)value; } }
-        public ushort HL { get { return (ushort)((H << 8) & L); } set { H = (byte)(value >> 8); L = (byte)value; } }
+        public ushort AF { get { return (ushort)((A << 8) | F); } set { A = (byte)(value >> 8); F = (byte)value; } }
+        public ushort BC { get { return (ushort)((B << 8) | C); } set { B = (byte)(value >> 8); C = (byte)value; } }
+        public ushort DE { get { return (ushort)((D << 8) | E); } set { D = (byte)(value >> 8); E = (byte)value; } }
+        public ushort HL { get { return (ushort)((H << 8) | L); } set { H = (byte)(value >> 8); L = (byte)value; } }
 
         // Zero Flag (Z): This bit is set when the result of a math operation is zero or two values match when using the CP instruction.
         public bool _Z { get { return (F & 128) != 0; } set { F |= 128; } }
@@ -94,15 +94,6 @@ namespace Z80
         public override string ToString()
         {
             List<string> sb = new List<string>();
-
-            sb.Add(String.Format("A={0:x2}", A));
-            sb.Add(String.Format("B={0:x2}", B));
-            sb.Add(String.Format("C={0:x2}", C));
-            sb.Add(String.Format("D={0:x2}", D));
-            sb.Add(String.Format("E={0:x2}", E));
-            sb.Add(String.Format("F={0:x2}", F));
-            sb.Add(String.Format("L={0:x2}", L));
-            sb.Add(String.Format("H={0:x2}", H));
 
             sb.Add(String.Format("AF={0:x4}", AF));
             sb.Add(String.Format("BC={0:x4}", BC));
