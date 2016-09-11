@@ -25,16 +25,13 @@ namespace Z80
         public ushort HL { get { return (ushort)((H << 8) | L); } set { H = (byte)(value >> 8); L = (byte)value; } }
 
         // Zero Flag (Z): This bit is set when the result of a math operation is zero or two values match when using the CP instruction.
-        public bool _Z { get { return (F & 128) != 0; } set { F |= 128; } }
-
         // Subtract Flag (N): This bit is set if a subtraction was performed in the last math instruction. 
-        public bool _N { get { return (F & 64) != 0; } set { F |= 64; } }
-
         // Half Carry Flag (H): This bit is set if a carry occurred from the lower nibble in the last math operation. 
-        public bool _H { get { return (F & 32) != 0; } set { F |= 32; } }
-
         // Carry Flag (C): This bit is set if a carry occurred from the last math operation or if register A is the smaller value when executing the CP instruction.
-        public bool _C { get { return (F & 16) != 0; } set { F |= 16; } }
+        public bool _Z { get { return (F & (1 << 7)) != 0; } set { if (value) F = SET(7, F); else F = RES(7, F); } }
+        public bool _N { get { return (F & (1 << 6)) != 0; } set { if (value) F = SET(6, F); else F = RES(6, F); } }
+        public bool _H { get { return (F & (1 << 5)) != 0; } set { if (value) F = SET(5, F); else F = RES(5, F); } }
+        public bool _C { get { return (F & (1 << 4)) != 0; } set { if (value) F = SET(4, F); else F = RES(4, F); } }
 
         // The program counter. Holds the point in memory that the processor is executing code from. No function can change PC except by actually jumping to a different location in memory.
         public ushort PC { get; set; }
@@ -42,6 +39,15 @@ namespace Z80
         // The stack pointer. Holds the current address of the top of the stack.
         public ushort SP { get; set; }
         #endregion
+
+        private byte SET(short flagIndex, byte reg)
+        {
+            return (byte)(reg | (byte)(1 << flagIndex));
+        }
+        private byte RES(short flagIndex, byte reg)
+        {
+            return reg &= (byte)~(1 << flagIndex);
+        }
 
         #region RAM
         byte[] ramArray;

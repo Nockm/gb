@@ -8,12 +8,14 @@ namespace Z80
 {
     public class Instruction
     {
-        public Instruction(string disassembly, Action action)
+        public Instruction(int cycles, string disassembly, Action action)
         {
+            Cycles = cycles;
             Disassembly = disassembly;
-            Execute = action;
+            Execute = action;            
         }
 
+        public int Cycles;
         public String Disassembly;
         public Action Execute;
     }

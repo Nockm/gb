@@ -60,7 +60,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\Resources\Bootstrap.bin" />
+    <None Include="Properties\Resources\Tetris.gb" />
+    <None Include="Resources\Tetris %28World%29.gb" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

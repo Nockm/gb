@@ -25,18 +25,38 @@ namespace Z80
 
         public Instruction FetchAndDecode()
         {
+            byte bank = 0x00;
             byte opcode = Machine.ReadU8();
-            Instruction[] instructionSet = Machine.Default;
 
-            //DebugOpcode debugOpcode = new DebugOpcode(opcode);
-
-            if (opcode == 0xCB)
+            // An optional prefix byte may appear before the opcode, changing its meaning and causing the Z80 
+            // to look up the opcode in a different bank of instructions.
+            //
+            // The prefix byte, if present, may have the values CB, DD, ED, or FD (these are hexadecimal values).
+            //
+            // Although there are opcodes which have these values too, there is no ambiguity: the first byte in 
+            // the instruction, if it has one of these values, is always a prefix byte.
+            switch (opcode)
             {
-                instructionSet = Machine.CB;
-                opcode = Machine.ReadU8();
+                case 0xCB:
+                case 0xED:
+                case 0xDD:
+                case 0xFD:
+                    {
+                        bank = opcode;
+                        opcode = Machine.ReadU8();
+                        break;
+                    }
             }
 
-            return instructionSet[opcode];
+            Instruction instruction = Machine.InstructionSet[bank][opcode];
+            DebugOpcode temp = new DebugOpcode(opcode);
+
+            if (instruction == null)
+            {
+                throw new NotImplementedException(String.Format("Opcode {0:x2}{1:x2} not implemented!", bank, opcode));
+            }
+
+            return instruction;
         }
 
         public void Startup()
@@ -57,6 +77,16 @@ namespace Z80
             Machine.Load(bootstrap, 0);
 
             // http://gbdev.gg8.se/wiki/articles/Gameboy_Bootstrap_ROM
+
+            byte[] tetris = Properties.Resources.Tetris;
+            Machine.Load(tetris, 0x000);
+
+            Machine.State.AF = 0x01B0;
+            Machine.State.BC = 0x0013;
+            Machine.State.DE = 0x00D8;
+            Machine.State.HL = 0x014D;
+            Machine.State.SP = 0xFFFE;
+            Machine.State.PC = 0x0100;
         }
     }
 }
