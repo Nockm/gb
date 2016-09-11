@@ -42,20 +42,50 @@ namespace Z80
         /// </summary>
         private void InitialiseInstructionSet()
         {
-            InstructionSet[0x00][0x00] = new Instruction(4, "NOP", () => { }); // No operation.
-            InstructionSet[0x00][0x01] = new Instruction(4, "STOP 0", () => { }); // Halt CPU & LCD display until button pressed.
+            ///////////////////////////////////////////////////////////////////////////////////////////
+            // NOP: No operation.
+            ///////////////////////////////////////////////////////////////////////////////////////////
+            InstructionSet[0x00][0x00] = new Instruction(4, "NOP", () => { });
 
+            ///////////////////////////////////////////////////////////////////////////////////////////
+            // STOP: Halt CPU & LCD display until button pressed.
+            ///////////////////////////////////////////////////////////////////////////////////////////
+            InstructionSet[0x00][0x01] = new Instruction(4, "STOP 0", () => { });
+
+            ///////////////////////////////////////////////////////////////////////////////////////////
+            // LD n,nn: Put value nn into n.
+            ///////////////////////////////////////////////////////////////////////////////////////////
             InstructionSet[0x00][0x01] = new Instruction(3, "LD BC nn", () => { State.BC = ReadU16(); });
             InstructionSet[0x00][0x11] = new Instruction(3, "LD DE nn", () => { State.DE = ReadU16(); });
             InstructionSet[0x00][0x21] = new Instruction(3, "LD HL nn", () => { State.HL = ReadU16(); });
             InstructionSet[0x00][0x31] = new Instruction(3, "LD SP nn", () => { State.SP = ReadU16(); });
 
-            InstructionSet[0x00][0x02] = new Instruction(8, "LD (BC), A", () => { State.WriteU16(val: State.A, offset: State.BC); State.HL--; });
-            InstructionSet[0x00][0x12] = new Instruction(8, "LD (DE), A", () => { State.WriteU16(val: State.A, offset: State.DE); State.HL--; });
+            ///////////////////////////////////////////////////////////////////////////////////////////
+            // LD (nn) A
+            ///////////////////////////////////////////////////////////////////////////////////////////
+            InstructionSet[0x00][0x02] = new Instruction(8, "LD (BC), A", () => { State.WriteU16(val: State.A, offset: State.BC); });
+            InstructionSet[0x00][0x12] = new Instruction(8, "LD (DE), A", () => { State.WriteU16(val: State.A, offset: State.DE); });
             InstructionSet[0x00][0x22] = new Instruction(8, "LD (HL+), A", () => { State.WriteU16(val: State.A, offset: State.HL); State.HL++; });
             InstructionSet[0x00][0x32] = new Instruction(8, "LD (HL-), A", () => { State.WriteU16(val: State.A, offset: State.HL); State.HL--; });
 
+            ///////////////////////////////////////////////////////////////////////////////////////////
+            // XOR: Logical exclusive OR n with register A, result in A.
+            ///////////////////////////////////////////////////////////////////////////////////////////
+            // Flags affected:
+            // Z - Set if result is zero.
+            // N - Reset.
+            // H - Reset.
+            // C - Reset.
+            ///////////////////////////////////////////////////////////////////////////////////////////
             InstructionSet[0x00][0xAF] = new Instruction(4, "XOR A", () => { State.A ^= State.A; SetZNHC(State.A == 0, false, false, false); });
+            InstructionSet[0x00][0xA8] = new Instruction(4, "XOR B", () => { State.A ^= State.B; SetZNHC(State.A == 0, false, false, false); });
+            InstructionSet[0x00][0xA9] = new Instruction(4, "XOR C", () => { State.A ^= State.C; SetZNHC(State.A == 0, false, false, false); });
+            InstructionSet[0x00][0xAA] = new Instruction(4, "XOR D", () => { State.A ^= State.D; SetZNHC(State.A == 0, false, false, false); });
+            InstructionSet[0x00][0xAB] = new Instruction(4, "XOR E", () => { State.A ^= State.E; SetZNHC(State.A == 0, false, false, false); });
+            InstructionSet[0x00][0xAC] = new Instruction(4, "XOR H", () => { State.A ^= State.H; SetZNHC(State.A == 0, false, false, false); });
+            InstructionSet[0x00][0xAD] = new Instruction(4, "XOR L", () => { State.A ^= State.L; SetZNHC(State.A == 0, false, false, false); });
+            InstructionSet[0x00][0xAE] = new Instruction(4, "XOR (HL)", () => { State.A ^= State.ReadU8(State.HL); SetZNHC(State.A == 0, false, false, false); });
+            //InstructionSet[0x00][0xEE] = new Instruction(4, "XOR *", () => { State.A ^= State.A; SetZNHC(State.A == 0, false, false, false); });
 
             InstructionSet[0x00][0xC3] = new Instruction(4, "JP a16", () => { State.PC = ReadU16(incrementPC: false); });
 
