@@ -9,14 +9,20 @@ namespace Z80
 {
     public class Machine
     {
+        /// <summary>
+        /// The internal state of the machine: Registers and RAM.
+        /// </summary>
         public State State = new State();
 
+        /// <summary>
+        /// Implementation of instructions, indexed by opcode.
+        /// </summary>
         public Dictionary<byte, Instruction[]> InstructionSet = new Dictionary<byte, Instruction[]>
         {
-            // Single-byte opcode bank.
+            // Allocate storage for single-byte opcode bank.
             { 0x00, new Instruction[255] }, 
 
-            // Double-byte opcode banks.
+            // Allocate storage for double-byte opcode banks.
             { 0xCB, new Instruction[255] },
             { 0xED, new Instruction[255] },
             { 0xDD, new Instruction[255] },
@@ -25,113 +31,87 @@ namespace Z80
 
         public Machine()
         {
-            // http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
-            // http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
+            InitialiseInstructionSet();
+        }
+
+        #region Implementation
+        /// <summary>
+        /// The hard work implementing all opcodes.
+        /// http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
+        /// http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
+        /// </summary>
+        private void InitialiseInstructionSet()
+        {
             InstructionSet[0x00][0x00] = new Instruction(4, "NOP", () => { }); // No operation.
             InstructionSet[0x00][0x01] = new Instruction(4, "STOP 0", () => { }); // Halt CPU & LCD display until button pressed.
+
             InstructionSet[0x00][0x01] = new Instruction(3, "LD BC nn", () => { State.BC = ReadU16(); });
             InstructionSet[0x00][0x11] = new Instruction(3, "LD DE nn", () => { State.DE = ReadU16(); });
             InstructionSet[0x00][0x21] = new Instruction(3, "LD HL nn", () => { State.HL = ReadU16(); });
             InstructionSet[0x00][0x31] = new Instruction(3, "LD SP nn", () => { State.SP = ReadU16(); });
+
             InstructionSet[0x00][0x02] = new Instruction(8, "LD (BC), A", () => { State.WriteU16(val: State.A, offset: State.BC); State.HL--; });
             InstructionSet[0x00][0x12] = new Instruction(8, "LD (DE), A", () => { State.WriteU16(val: State.A, offset: State.DE); State.HL--; });
             InstructionSet[0x00][0x22] = new Instruction(8, "LD (HL+), A", () => { State.WriteU16(val: State.A, offset: State.HL); State.HL++; });
             InstructionSet[0x00][0x32] = new Instruction(8, "LD (HL-), A", () => { State.WriteU16(val: State.A, offset: State.HL); State.HL--; });
-            InstructionSet[0x00][0xAF] = new Instruction(4, "XOR A", () => { XOR(State.A); });
 
-            InstructionSet[0x00][0xC3] = new Instruction(4, "JP a16", () => { State.PC = ReadU16(updatePC: false); });
+            InstructionSet[0x00][0xAF] = new Instruction(4, "XOR A", () => { State.A ^= State.A; SetZNHC(State.A == 0, false, false, false); });
 
-            // If following condition is true then add n to current address and jump to it:
-            // Use with:
-            // = one byte signed immediate value
-            // = NZ, Jump if Z flag is reset.
-            // = Z,  Jump if Z flag is set.
-            // = NC, Jump if C flag is reset.
-            // = C,  Jump if C flag is set.
+            InstructionSet[0x00][0xC3] = new Instruction(4, "JP a16", () => { State.PC = ReadU16(incrementPC: false); });
+
+            ///////////////////////////////////////////////////////////////////////////////////////////
+            // JR: If condition is true then add n to current address and jump to it.
+            ///////////////////////////////////////////////////////////////////////////////////////////
+            // ?? - one byte signed immediate value
+            // NZ - Jump if Z flag is reset.
+            // Z  - Jump if Z flag is set.
+            // NC - Jump if C flag is reset.
+            // C  - Jump if C flag is set.
             // Opcodes:
             // Instruction  Parameters      Opcode  Cycles
-            //           NZ,*            20         8
-            //           Z,*             28         8
-            //           NC,*            30         8
-            //           C,*             38         8
-            InstructionSet[0x00][0x20] = new Instruction(12 / 8, "JR NZ,r8", () =>
-            {
-                if (State._Z)
-                {
-                    byte d = ReadU8();
-                    State.PC = d;
-                }
-            });
+            // NZ,*            20         8
+            // Z,*             28         8
+            // NC,*            30         8
+            // C,*             38         8
+            ///////////////////////////////////////////////////////////////////////////////////////////
+            InstructionSet[0x00][0x20] = new Instruction(12 / 8, "JR NZ,r8", () => { if (State._Z) { State.PC += PC_ReadU8(); } });
 
-            InstructionSet[0xCB][0x7C] = new Instruction(8, "BIT 7,H", () => { BIT(7, State.H); });
-        }
-
-        private void ScratchPad()
-        {
-            SET(3, State.B);
-        }
-
-        public void Load(byte[] data, long offset)
-        {
-            State.WriteBytes(data, offset);
-        }
-
-        #region Helpers
-        /// <summary>
-        /// Checks if a bit is one. Result is returned to the Zero flag.
-        /// </summary>
-        private void BIT(short flagIndex, uint val)
-        {
+            ///////////////////////////////////////////////////////////////////////////////////////////
+            // BIT: Checks if a bit is one. Result is returned to the Zero flag.
+            ///////////////////////////////////////////////////////////////////////////////////////////
             // Z - Set if bit b of register r is 0.
             // N - Reset.
             // H - Set.
             // C - Not affected
-            uint mask = ((uint)1 << flagIndex);
-            uint masked = val & mask;
-            SetZNHC(masked == 0, false, true, null);
+            ///////////////////////////////////////////////////////////////////////////////////////////
+            InstructionSet[0xCB][0x7C] = new Instruction(8, "BIT 7,H", () => { SetZNHC(!Flag.Get(State.H, 7), false, true, null); }); // 
         }
+        #endregion
 
+        #region Helpers
         /// <summary>
-        /// Sets the bit (bit=1)
+        /// Read the next byte addressed by the Program Counter.
         /// </summary>
-        private byte SET(short flagIndex, byte reg)
-        {
-            return (byte)(reg | (byte)(1 << flagIndex));
-        }
-
-        /// <summary>
-        /// Resets the bit (bit=0)
-        /// </summary>
-        private void RES(short flagIndex, ref byte reg)
-        {
-            reg &= (byte)~(1 << flagIndex);
-        }
-
-        public void XOR(byte s)
-        {
-            State.A ^= s;
-            SetZNHC(State.A == 0, false, false, false);
-        }
-
-        public byte ReadU8()
+        public byte PC_ReadU8(bool incrementPC = true)
         {
             byte s = State.ReadU8(State.PC);
-            State.PC += 1;
+            if (incrementPC) State.PC += 1;
             return s;
         }
 
-        public ushort ReadU16(bool updatePC = true)
+        /// <summary>
+        /// Read the next 2 bytes addressed by the Program Counter.
+        /// </summary>
+        public ushort ReadU16(bool incrementPC = true)
         {
             ushort s = State.ReadU16(State.PC);
-
-            if (updatePC)
-            {
-                State.PC += 2;
-            }
-
+            if (incrementPC) State.PC += 2;
             return s;
         }
 
+        /// <summary>
+        /// Easy way to update all flags to set/reset/unchanged by specifying true/false/null respectively.
+        /// </summary>
         private void SetZNHC(bool? z, bool? n, bool? h, bool? c)
         {
             if (z.HasValue) State._Z = z.Value;

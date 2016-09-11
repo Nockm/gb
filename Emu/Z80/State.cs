@@ -4,6 +4,10 @@ using System.IO;
 
 namespace Z80
 {
+    /// <summary>
+    /// Represents the state of the Machine (register and memory contents).
+    /// This state should be able to be saved and loaded to resume playback.
+    /// </summary>
     public class State
     {
         #region Registers
@@ -24,14 +28,14 @@ namespace Z80
         public ushort DE { get { return (ushort)((D << 8) | E); } set { D = (byte)(value >> 8); E = (byte)value; } }
         public ushort HL { get { return (ushort)((H << 8) | L); } set { H = (byte)(value >> 8); L = (byte)value; } }
 
-        // Zero Flag (Z): This bit is set when the result of a math operation is zero or two values match when using the CP instruction.
-        // Subtract Flag (N): This bit is set if a subtraction was performed in the last math instruction. 
-        // Half Carry Flag (H): This bit is set if a carry occurred from the lower nibble in the last math operation. 
-        // Carry Flag (C): This bit is set if a carry occurred from the last math operation or if register A is the smaller value when executing the CP instruction.
-        public bool _Z { get { return (F & (1 << 7)) != 0; } set { if (value) F = SET(7, F); else F = RES(7, F); } }
-        public bool _N { get { return (F & (1 << 6)) != 0; } set { if (value) F = SET(6, F); else F = RES(6, F); } }
-        public bool _H { get { return (F & (1 << 5)) != 0; } set { if (value) F = SET(5, F); else F = RES(5, F); } }
-        public bool _C { get { return (F & (1 << 4)) != 0; } set { if (value) F = SET(4, F); else F = RES(4, F); } }
+        // Zero Flag       (Z) This bit is set when the result of a math operation is zero or two values match when using the CP instruction.
+        // Subtract Flag   (N) This bit is set if a subtraction was performed in the last math instruction. 
+        // Half Carry Flag (H) This bit is set if a carry occurred from the lower nibble in the last math operation. 
+        // Carry Flag      (C) This bit is set if a carry occurred from the last math operation or if register A is the smaller value when executing the CP instruction.
+        public bool _Z { get { return Flag.Get(F, 7); } set { if (value) F = Flag.Set(F, 7); else F = Flag.Reset(F, 7); } }
+        public bool _N { get { return Flag.Get(F, 6); } set { if (value) F = Flag.Set(F, 6); else F = Flag.Reset(F, 6); } }
+        public bool _H { get { return Flag.Get(F, 5); } set { if (value) F = Flag.Set(F, 5); else F = Flag.Reset(F, 5); } }
+        public bool _C { get { return Flag.Get(F, 4); } set { if (value) F = Flag.Set(F, 4); else F = Flag.Reset(F, 4); } }
 
         // The program counter. Holds the point in memory that the processor is executing code from. No function can change PC except by actually jumping to a different location in memory.
         public ushort PC { get; set; }
@@ -40,39 +44,53 @@ namespace Z80
         public ushort SP { get; set; }
         #endregion
 
-        private byte SET(short flagIndex, byte reg)
-        {
-            return (byte)(reg | (byte)(1 << flagIndex));
-        }
-        private byte RES(short flagIndex, byte reg)
-        {
-            return reg &= (byte)~(1 << flagIndex);
-        }
-
         #region RAM
+        /// <summary>
+        /// 64k RAM allocation.
+        /// </summary>
         byte[] ramArray;
+
+        /// <summary>
+        /// Wrapper around ramArray for easier operations in bulk, e.g. loading a ROM.
+        /// </summary>
         MemoryStream ramStream;
+
+        /// <summary>
+        /// Write 1 byte at the specified offset.
+        /// </summary>
         internal void WriteU8(byte val, long offset)
         {
             ramArray[offset] = val;
         }
 
+        /// <summary>
+        /// Write 2 bytes at the specified offset.
+        /// </summary>
         internal void WriteU16(ushort val, long offset)
         {
             WriteBytes(BitConverter.GetBytes(val), offset);
         }
 
+        /// <summary>
+        /// Write bytes at the specified offset.
+        /// </summary>
         internal void WriteBytes(byte[] data, long offset)
         {
             ramStream.Position = offset;
             ramStream.Write(data, 0, data.Length);
         }
 
+        /// <summary>
+        /// Read 1 byte at the specified offset.
+        /// </summary>
         internal byte ReadU8(int offset)
         {
             return ramArray[offset];
         }
 
+        /// <summary>
+        /// Read 2 bytes at the specified offset.
+        /// </summary>
         internal ushort ReadU16(int offset)
         {
             return BitConverter.ToUInt16(ramArray, offset);
@@ -92,13 +110,28 @@ namespace Z80
             //    0xFF00-0xFF7F: Devices’ Mappings. Used to access I/O devices.
             //    0xFF80-0xFFFE: High RAM Area.
             //    0xFFFF: Interrupt Enable Register.
+
             ramArray = new byte[64 * 1024];
             ramStream = new MemoryStream(ramArray);
         }
 
         #region Debugging
+        /// <summary>
+        /// Override ToString() so the debugger shows the state for easier debugging.
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
+            return SerializeRegisters();
+        }
+
+        /// <summary>
+        /// A nicely-formatted and comparable string representation of the Registers.
+        /// </summary>
+        private string SerializeRegisters()
+        {
+            // Produce output which looks like:
+            // AF=01B0 BC=0013 DE=00D8 HL=014D SP=FFFE PC=0150
             List<string> sb = new List<string>();
 
             sb.Add(String.Format("AF={0:x4}", AF));
