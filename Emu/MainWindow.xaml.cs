@@ -28,7 +28,7 @@ namespace Emu
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            Machine machine = new Machine();
+            Main machine = new Main();
             machine.Startup();
             machine.Run();
         }

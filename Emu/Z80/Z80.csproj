@@ -39,10 +39,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Cpu.cs" />
     <Compile Include="Machine.cs" />
+    <Compile Include="Log.cs" />
+    <Compile Include="Main.cs" />
     <Compile Include="Instruction.cs" />
-    <Compile Include="Memory.cs" />
     <Compile Include="DebugOpcode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">

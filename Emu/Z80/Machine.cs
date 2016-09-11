@@ -1,59 +1,93 @@
-﻿namespace Z80
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Z80
 {
     public class Machine
     {
-        Cpu Cpu = new Cpu();
+        public State State = new State();
 
-        public void Run()
+        public Instruction[] Default = new Instruction[255];
+        public Instruction[] CB = new Instruction[255];
+
+        public Machine()
         {
-            while (true)
-            {
-                Cycle();
-            }
+            Default[0x01] = new Instruction("LD BC nn", () => { State.BC = ReadU16(); });
+            Default[0x11] = new Instruction("LD DE nn", () => { State.DE = ReadU16(); });
+            Default[0x21] = new Instruction("LD HL nn", () => { State.HL = ReadU16(); });
+            Default[0x31] = new Instruction("LD SP nn", () => { State.SP = ReadU16(); });
+
+            Default[0x02] = new Instruction("LD (BC), A", () => { State.WriteU16(val: State.A, offset: State.BC); State.HL--; });
+            Default[0x12] = new Instruction("LD (DE), A", () => { State.WriteU16(val: State.A, offset: State.DE); State.HL--; });
+            Default[0x22] = new Instruction("LD (HL+), A", () => { State.WriteU16(val: State.A, offset: State.HL); State.HL++; });
+            Default[0x32] = new Instruction("LD (HL-), A", () => { State.WriteU16(val: State.A, offset: State.HL); State.HL--; });
+
+            Default[0xAF] = new Instruction("XOR A", () => { XOR(State.A); });
         }
 
-        private void Cycle()
+        public void Load(byte[] data, long offset)
         {
-            Instruction instruction = FetchAndDecode();
-            instruction.Execute();
+            State.WriteBytes(data, offset);
         }
 
-        public Instruction FetchAndDecode()
+        #region Helpers
+        /// <summary>
+        /// Checks if a bit is one. Result is returned to the Zero flag.
+        /// </summary>
+        private void Bit(short flagIndex, uint val)
         {
-            byte opcode = Cpu.ReadU8();
-
-            DebugOpcode debugOpcode = new DebugOpcode(opcode);
-
-            switch (opcode)
-            {
-                case 0xCB:
-                    {
-                        opcode = Cpu.ReadU8();
-                        debugOpcode = new DebugOpcode(opcode);
-                        return Cpu.CB[opcode];
-                    }
-                default: return Cpu.Default[opcode];
-            }
+            uint mask = ((uint)1 << flagIndex);
+            uint masked = val & mask;
+            State._Z = masked == 0;
         }
 
-        public void Startup()
+        /// <summary>
+        /// Sets the bit (bit=1)
+        /// </summary>
+        private void Set(short flagIndex, ref byte reg)
         {
-            /// The boot ROM is a bootstrap program which is a 256 bytes big piece of
-            /// code which checks the cartridge header is correct, scrolls the
-            /// Nintendo bootup graphics and plays the "po-ling" sound.
-            byte[] bootstrap = Properties.Resources.Bootstrap;
-
-            /// When the Gameboy is turned on, the bootstrap ROM is situated in a
-            /// memory page at positions $0-$FF (0-255). The CPU enters at $0 at
-            /// startup, and the last two instructions of the code writes to a special
-            /// register which disables the internal ROM page, thus making the lower
-            /// 256 bytes of the cartridge ROM readable. The last instruction is
-            /// situated at position $FE and is two bytes big, which means that right
-            /// after that instruction has finished, the CPU executes the instruction
-            /// at $100, which is the entry point code on a cartridge.
-            Cpu.Mem.WriteBytes(bootstrap, 0);
-
-            // http://gbdev.gg8.se/wiki/articles/Gameboy_Bootstrap_ROM
+            reg |= (byte)(1 << flagIndex);
         }
+
+        /// <summary>
+        /// Resets the bit (bit=0)
+        /// </summary>
+        private void Res(short flagIndex, ref byte reg)
+        {
+            reg &= (byte)~(1 << flagIndex);
+        }
+
+        public void XOR(byte s)
+        {
+            State.A ^= s;
+            SetFlags(State.A == 0, false, false, false);
+        }
+
+        public byte ReadU8()
+        {
+            byte s = State.ReadU8(State.PC);
+            State.PC += 1;
+            return s;
+        }
+
+        public ushort ReadU16()
+        {
+            ushort s = State.ReadU16(State.PC);
+            State.PC += 2;
+            return s;
+        }
+
+        private void SetFlags(bool z, bool n, bool h, bool c)
+        {
+            State._Z = z;
+            State._N = n;
+            State._H = h;
+            State._C = c;
+        }
+        #endregion
     }
 }
